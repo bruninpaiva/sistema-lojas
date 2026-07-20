@@ -143,12 +143,12 @@ export const aiChat = createServerFn({ method: "POST" })
           });
           const { data: rows, error } = await supabaseAdmin
             .from("attendances")
-            .select("id,type,amount,store_id,rep_id,created_at")
+            .select("id,type,amount,store_id,sales_rep_id,created_at")
             .gte("created_at", from)
             .lt("created_at", to);
           if (error) return { error: error.message };
           const all = rows ?? [];
-          const vendas = all.filter((r: any) => r.type === "venda");
+          const vendas = all.filter((r: any) => r.type === "sale");
           const total = all.length;
           const totalVendas = vendas.length;
           const faturamento = vendas.reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0);
@@ -164,13 +164,13 @@ export const aiChat = createServerFn({ method: "POST" })
           const byRep = new Map<string, { name: string; store: string; vendas: number; faturamento: number; atendimentos: number }>();
           const byStore = new Map<string, { name: string; vendas: number; faturamento: number; atendimentos: number }>();
           for (const r of all) {
-            const rep = repMap.get(r.rep_id) as any;
-            const repKey = r.rep_id ?? "sem_rep";
+            const rep = repMap.get(r.sales_rep_id) as any;
+            const repKey = r.sales_rep_id ?? "sem_rep";
             const repName = rep?.name ?? "—";
             const storeName = storeMap.get(r.store_id) ?? "—";
             const rb = byRep.get(repKey) ?? { name: repName, store: storeName, vendas: 0, faturamento: 0, atendimentos: 0 };
             rb.atendimentos += 1;
-            if (r.type === "venda") {
+            if (r.type === "sale") {
               rb.vendas += 1;
               rb.faturamento += Number(r.amount ?? 0);
             }
@@ -178,7 +178,7 @@ export const aiChat = createServerFn({ method: "POST" })
 
             const sb = byStore.get(r.store_id) ?? { name: storeName, vendas: 0, faturamento: 0, atendimentos: 0 };
             sb.atendimentos += 1;
-            if (r.type === "venda") {
+            if (r.type === "sale") {
               sb.vendas += 1;
               sb.faturamento += Number(r.amount ?? 0);
             }
@@ -222,8 +222,8 @@ export const aiChat = createServerFn({ method: "POST" })
           });
           const { data, error } = await supabaseAdmin
             .from("attendances")
-            .select("no_sale_reason_id,type,created_at")
-            .neq("type", "venda")
+            .select("reason_id,type,created_at")
+            .eq("type", "no_sale")
             .gte("created_at", from)
             .lt("created_at", to);
           if (error) return { error: error.message };
@@ -233,7 +233,7 @@ export const aiChat = createServerFn({ method: "POST" })
           const map = new Map((reasons ?? []).map((r: any) => [r.id, r.label]));
           const counts = new Map<string, number>();
           for (const r of data ?? []) {
-            const label = map.get(r.no_sale_reason_id) ?? "Não informado";
+            const label = map.get(r.reason_id) ?? "Não informado";
             counts.set(label, (counts.get(label) ?? 0) + 1);
           }
           return {
