@@ -176,13 +176,14 @@ export const aiChat = createServerFn({ method: "POST" })
             }
             byRep.set(repKey, rb);
 
-            const sb = byStore.get(r.store_id) ?? { name: storeName, vendas: 0, faturamento: 0, atendimentos: 0 };
+            const storeKey = r.store_id ?? "sem_loja";
+            const sb = byStore.get(storeKey) ?? { name: storeName, vendas: 0, faturamento: 0, atendimentos: 0 };
             sb.atendimentos += 1;
             if (r.type === "sale") {
               sb.vendas += 1;
               sb.faturamento += Number(r.amount ?? 0);
             }
-            byStore.set(r.store_id, sb);
+            byStore.set(storeKey, sb);
           }
           const rankingReps = [...byRep.values()].sort((a, b) => b.faturamento - a.faturamento).slice(0, 20);
           const rankingLojas = [...byStore.values()].sort((a, b) => b.faturamento - a.faturamento);
