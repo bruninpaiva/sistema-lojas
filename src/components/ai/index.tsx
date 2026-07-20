@@ -4,7 +4,7 @@ import { AIChatDrawer } from "./AIChatDrawer";
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 
-const AUTH_KEY = "lupo_admin_auth";
+const AUTH_KEY = "lupo_admin_ok";
 
 function useAdminAuthed(): boolean {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
