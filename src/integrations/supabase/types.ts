@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          role: Database["public"]["Enums"]["admin_role"]
+          store_id: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          role?: Database["public"]["Enums"]["admin_role"]
+          store_id?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          role?: Database["public"]["Enums"]["admin_role"]
+          store_id?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendances: {
         Row: {
           amount: number | null
@@ -75,6 +113,121 @@ export type Database = {
           },
         ]
       }
+      commission_imports: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          commission_config: Json
+          created_at: string
+          id: string
+          imported_by: string | null
+          meta_amount: number
+          month: number
+          store_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          commission_config?: Json
+          created_at?: string
+          id?: string
+          imported_by?: string | null
+          meta_amount?: number
+          month: number
+          store_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          commission_config?: Json
+          created_at?: string
+          id?: string
+          imported_by?: string | null
+          meta_amount?: number
+          month?: number
+          store_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_imports_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_rows: {
+        Row: {
+          bruto: number
+          consentimentos: number
+          created_at: string
+          desc_pct: number
+          desconto: number
+          id: string
+          import_id: string
+          liquido: number
+          nome: string
+          pa: number
+          pm: number
+          tm: number
+          uni: number
+          vendas: number
+          vendas_com: number
+          vendas_sem: number
+        }
+        Insert: {
+          bruto?: number
+          consentimentos?: number
+          created_at?: string
+          desc_pct?: number
+          desconto?: number
+          id?: string
+          import_id: string
+          liquido?: number
+          nome: string
+          pa?: number
+          pm?: number
+          tm?: number
+          uni?: number
+          vendas?: number
+          vendas_com?: number
+          vendas_sem?: number
+        }
+        Update: {
+          bruto?: number
+          consentimentos?: number
+          created_at?: string
+          desc_pct?: number
+          desconto?: number
+          id?: string
+          import_id?: string
+          liquido?: number
+          nome?: string
+          pa?: number
+          pm?: number
+          tm?: number
+          uni?: number
+          vendas?: number
+          vendas_com?: number
+          vendas_sem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_rows_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "commission_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       no_sale_reasons: {
         Row: {
           active: boolean
@@ -120,6 +273,36 @@ export type Database = {
           full_name?: string | null
           id?: string
           username?: string
+        }
+        Relationships: []
+      }
+      promo_exports: {
+        Row: {
+          created_at: string
+          csv_content: string
+          discount: number
+          file_name: string
+          filters: Json
+          id: string
+          product_count: number
+        }
+        Insert: {
+          created_at?: string
+          csv_content: string
+          discount: number
+          file_name: string
+          filters?: Json
+          id?: string
+          product_count: number
+        }
+        Update: {
+          created_at?: string
+          csv_content?: string
+          discount?: number
+          file_name?: string
+          filters?: Json
+          id?: string
+          product_count?: number
         }
         Relationships: []
       }
@@ -256,6 +439,60 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create: {
+        Args: {
+          _actor: string
+          _actor_password: string
+          _password: string
+          _role?: Database["public"]["Enums"]["admin_role"]
+          _store_id?: string
+          _username: string
+        }
+        Returns: string
+      }
+      admin_delete: {
+        Args: { _actor: string; _actor_password: string; _id: string }
+        Returns: undefined
+      }
+      admin_list: {
+        Args: { _actor: string; _actor_password: string }
+        Returns: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["admin_role"]
+          store_id: string
+          updated_at: string
+          username: string
+        }[]
+      }
+      admin_update: {
+        Args: {
+          _actor: string
+          _actor_password: string
+          _id: string
+          _new_password: string
+          _new_role?: Database["public"]["Enums"]["admin_role"]
+          _new_store_id?: string
+          _new_username: string
+        }
+        Returns: undefined
+      }
+      close_commission_import: {
+        Args: { _actor: string; _actor_password: string; _import_id: string }
+        Returns: undefined
+      }
+      delete_commission_import: {
+        Args: { _actor: string; _actor_password: string; _import_id: string }
+        Returns: undefined
+      }
+      get_commission_full: {
+        Args: { _actor: string; _actor_password: string; _import_id: string }
+        Returns: Json
+      }
+      get_commission_summary: {
+        Args: { _actor: string; _actor_password: string; _import_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -263,13 +500,59 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_commission_imports: {
+        Args: { _actor: string; _actor_password: string }
+        Returns: {
+          closed_at: string
+          closed_by: string
+          id: string
+          imported_by: string
+          meta_amount: number
+          month: number
+          store_id: string
+          store_name: string
+          updated_at: string
+          year: number
+        }[]
+      }
+      reopen_commission_import: {
+        Args: { _actor: string; _actor_password: string; _import_id: string }
+        Returns: undefined
+      }
+      save_commission_import: {
+        Args: {
+          _actor: string
+          _actor_password: string
+          _config: Json
+          _meta: number
+          _month: number
+          _rows: Json
+          _store_id: string
+          _year: number
+        }
+        Returns: string
+      }
       send_to_end_of_queue: { Args: { _rep_id: string }; Returns: undefined }
+      verify_admin: {
+        Args: { _password: string; _username: string }
+        Returns: boolean
+      }
+      verify_admin_user: {
+        Args: { _password: string; _username: string }
+        Returns: {
+          id: string
+          role: Database["public"]["Enums"]["admin_role"]
+          store_id: string
+          username: string
+        }[]
+      }
       verify_store_pin: {
         Args: { _pin: string; _store_id: string }
         Returns: boolean
       }
     }
     Enums: {
+      admin_role: "admin" | "gerente"
       app_role: "admin" | "operator"
     }
     CompositeTypes: {
@@ -398,6 +681,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_role: ["admin", "gerente"],
       app_role: ["admin", "operator"],
     },
   },
