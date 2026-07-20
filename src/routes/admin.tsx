@@ -1181,7 +1181,9 @@ function BreaksTab() {
   const storeName = (id: string | null) => stores.find((s) => s.id === id)?.name ?? "—";
 
   const now = Date.now();
-  const withDuration = data.map((b) => {
+  // "Fora horário de trabalho" não conta nas métricas — é ausência esperada, não pausa.
+  const countable = data.filter((b) => b.reason !== "Fora horário de trabalho");
+  const withDuration = countable.map((b) => {
     const endMs = b.ended_at ? new Date(b.ended_at).getTime() : now;
     const mins = Math.max(0, Math.floor((endMs - new Date(b.started_at).getTime()) / 60000));
     return { ...b, minutes: mins };
