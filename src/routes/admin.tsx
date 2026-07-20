@@ -12,9 +12,14 @@ import {
   ChevronRight,
   Store as StoreIcon,
   RefreshCw,
-  
   Coffee,
+  KeyRound,
+  Pencil,
+  Tag,
+  Calculator,
 } from "lucide-react";
+import PromotionsTab from "@/components/PromotionsTab";
+import CommissionTab from "@/components/CommissionTab";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from "recharts";
@@ -27,14 +32,19 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Tab = "dashboard" | "por-vendedora" | "pausas" | "lojas" | "vendedoras" | "motivos" | "exportar";
+type Tab = "dashboard" | "por-vendedora" | "pausas" | "lojas" | "vendedoras" | "motivos" | "usuarios" | "promocoes" | "comissao" | "exportar";
 
-const ADMIN_CREDENTIALS: Record<string, string> = {
-  admin: "123456",
-  Eduardo: "1966",
-  Elisa: "1967",
-};
 const AUTH_KEY = "lupo_admin_ok";
+const ACTOR_USER_KEY = "lupo_admin_user";
+const ACTOR_PASS_KEY = "lupo_admin_pass";
+
+export function getAdminActor(): { user: string; pass: string } | null {
+  if (typeof window === "undefined") return null;
+  const user = sessionStorage.getItem(ACTOR_USER_KEY);
+  const pass = sessionStorage.getItem(ACTOR_PASS_KEY);
+  if (!user || !pass) return null;
+  return { user, pass };
+}
 
 const ALL_STORES = "__all__";
 
@@ -55,7 +65,12 @@ function AdminPage() {
         </div>
         <h1 className="text-xl font-bold">Administração</h1>
         <button
-          onClick={() => { sessionStorage.removeItem(AUTH_KEY); setAuthed(false); }}
+          onClick={() => {
+            sessionStorage.removeItem(AUTH_KEY);
+            sessionStorage.removeItem(ACTOR_USER_KEY);
+            sessionStorage.removeItem(ACTOR_PASS_KEY);
+            setAuthed(false);
+          }}
           className="ml-auto rounded-lg border border-white/30 px-3 py-1.5 text-sm hover:bg-white/10"
         >
           Sair
@@ -70,6 +85,9 @@ function AdminPage() {
           { id: "lojas", label: "Lojas", icon: StoreIcon },
           { id: "vendedoras", label: "Vendedoras", icon: Users },
           { id: "motivos", label: "Motivos", icon: ListChecks },
+          { id: "usuarios", label: "Usuários", icon: KeyRound },
+          { id: "promocoes", label: "Promoções", icon: Tag },
+          { id: "comissao", label: "Comissão", icon: Calculator },
           { id: "exportar", label: "Exportar", icon: Download },
         ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map(({ id, label, icon: Icon }) => (
           <button
@@ -91,6 +109,9 @@ function AdminPage() {
         {tab === "lojas" && <StoresTab />}
         {tab === "vendedoras" && <SalesRepsTab />}
         {tab === "motivos" && <ReasonsTab />}
+        {tab === "usuarios" && <UsersTab />}
+        {tab === "promocoes" && <PromotionsTab />}
+        {tab === "comissao" && <CommissionTab />}
         {tab === "exportar" && <ExportTab />}
       </main>
     </div>
@@ -101,12 +122,21 @@ function AdminLogin({ onOk }: { onOk: () => void }) {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const expected = ADMIN_CREDENTIALS[user.trim()];
-    if (expected && pass === expected) {
+    setBusy(true);
+    setError(false);
+    const { data, error: err } = await supabase.rpc("verify_admin", {
+      _username: user.trim(),
+      _password: pass,
+    });
+    setBusy(false);
+    if (!err && data === true) {
       sessionStorage.setItem(AUTH_KEY, "1");
+      sessionStorage.setItem(ACTOR_USER_KEY, user.trim());
+      sessionStorage.setItem(ACTOR_PASS_KEY, pass);
       onOk();
     } else {
       setError(true);
@@ -135,8 +165,8 @@ function AdminLogin({ onOk }: { onOk: () => void }) {
           className="mb-4 w-full rounded-xl border-2 border-border bg-background px-4 py-3 text-lg"
         />
         {error && <p className="mb-3 text-sm font-semibold text-destructive">Usuário ou senha incorretos.</p>}
-        <button type="submit" className="w-full rounded-xl bg-brand px-6 py-3 text-lg font-bold text-brand-foreground">
-          Entrar
+        <button type="submit" disabled={busy} className="w-full rounded-xl bg-brand px-6 py-3 text-lg font-bold text-brand-foreground disabled:opacity-60">
+          {busy ? "Entrando..." : "Entrar"}
         </button>
         <Link to="/" className="mt-4 block text-center text-sm text-muted-foreground hover:text-foreground">
           Voltar
@@ -996,6 +1026,7 @@ function PerRepTab() {
                       <th className="px-3 py-2">Data/Hora</th>
                       <th className="px-3 py-2">Tipo</th>
                       <th className="px-3 py-2">Motivo</th>
+                      <th className="px-3 py-2">Observação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1007,7 +1038,9 @@ function PerRepTab() {
                             ? <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">Venda</span>
                             : <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">Não venda</span>}
                         </td>
-                        <td className="px-3 py-2">{a.type === "no_sale" ? (a.reason_other_text || reasons.find((r) => r.id === a.reason_id)?.label || "—") : "—"}</td>
+                        <td className="px-3 py-2">{a.type === "no_sale" ? (reasons.find((r) => r.id === a.reason_id)?.label ?? "—") : "—"}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{a.type === "no_sale" ? (a.reason_other_text || "—") : "—"}</td>
+
                       </tr>
                     ))}
                   </tbody>
@@ -1046,8 +1079,9 @@ function ExportTab() {
     Loja: storesMap.get(a.store_id ?? "") ?? "—",
     Vendedora: reps.get(a.sales_rep_id) ?? "—",
     Tipo: a.type === "sale" ? "Venda" : "Não venda",
-    Motivo: a.type === "no_sale" ? (a.reason_other_text || reasons.get(a.reason_id ?? "") || "") : "",
-    Observações: a.notes ?? "",
+    Motivo: a.type === "no_sale" ? (reasons.get(a.reason_id ?? "") ?? "") : "",
+    Observações: a.type === "no_sale" ? (a.reason_other_text ?? "") : (a.notes ?? ""),
+
   })), [data, reps, reasons, storesMap]);
 
   const exportXlsx = () => {
@@ -1300,6 +1334,200 @@ function BreaksTab() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+// ------------ Users (admin credentials) ------------
+
+type AdminUser = { id: string; username: string; created_at: string; updated_at: string };
+
+function UsersTab() {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showNew, setShowNew] = useState(false);
+  const [newUser, setNewUser] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [editUser, setEditUser] = useState("");
+  const [editPass, setEditPass] = useState("");
+
+  const actor = getAdminActor();
+
+  const load = async () => {
+    if (!actor) return;
+    setLoading(true);
+    const { data, error } = await supabase.rpc("admin_list", {
+      _actor: actor.user,
+      _actor_password: actor.pass,
+    });
+    setLoading(false);
+    if (error) { toast.error("Erro ao carregar usuários"); return; }
+    setUsers((data ?? []) as AdminUser[]);
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const create = async () => {
+    if (!actor) return;
+    if (!newUser.trim() || newPass.length < 4) {
+      toast.error("Usuário e senha (mínimo 4 caracteres) obrigatórios");
+      return;
+    }
+    const { error } = await supabase.rpc("admin_create", {
+      _actor: actor.user,
+      _actor_password: actor.pass,
+      _username: newUser.trim(),
+      _password: newPass,
+    });
+    if (error) { toast.error("Erro ao criar usuário"); return; }
+    toast.success("Usuário criado");
+    setNewUser(""); setNewPass(""); setShowNew(false);
+    load();
+  };
+
+  const save = async () => {
+    if (!actor || !editing) return;
+    const newName = editUser.trim();
+    const newPwd = editPass;
+    if (!newName && !newPwd) { setEditing(null); return; }
+    if (newPwd && newPwd.length < 4) { toast.error("Senha muito curta"); return; }
+    const { error } = await supabase.rpc("admin_update", {
+      _actor: actor.user,
+      _actor_password: actor.pass,
+      _id: editing.id,
+      _new_username: newName || (null as unknown as string),
+      _new_password: newPwd || (null as unknown as string),
+    });
+    if (error) { toast.error("Erro ao salvar"); return; }
+    toast.success("Usuário atualizado");
+    setEditing(null); setEditUser(""); setEditPass("");
+    load();
+  };
+
+  const remove = async (u: AdminUser) => {
+    if (!actor) return;
+    if (u.username === actor.user) { toast.error("Você não pode excluir seu próprio usuário"); return; }
+    if (!confirm(`Excluir o usuário "${u.username}"?`)) return;
+    const { error } = await supabase.rpc("admin_delete", {
+      _actor: actor.user,
+      _actor_password: actor.pass,
+      _id: u.id,
+    });
+    if (error) { toast.error("Erro ao excluir"); return; }
+    toast.success("Usuário excluído");
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Usuários administradores</h2>
+          <p className="text-sm text-muted-foreground">Quem pode acessar o painel de administração.</p>
+        </div>
+        <button
+          onClick={() => setShowNew((v) => !v)}
+          className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 font-semibold text-brand-foreground"
+        >
+          <Plus size={18} /> Novo usuário
+        </button>
+      </div>
+
+      {showNew && (
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <h3 className="mb-3 font-semibold">Criar novo usuário</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-semibold">Usuário</label>
+              <input value={newUser} onChange={(e) => setNewUser(e.target.value)}
+                className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold">Senha</label>
+              <input type="text" value={newPass} onChange={(e) => setNewPass(e.target.value)}
+                placeholder="mínimo 4 caracteres"
+                className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5" />
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button onClick={create} className="rounded-xl bg-brand px-4 py-2 font-semibold text-brand-foreground">Salvar</button>
+            <button onClick={() => { setShowNew(false); setNewUser(""); setNewPass(""); }}
+              className="rounded-xl border border-border px-4 py-2 font-semibold">Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        {loading ? (
+          <div className="p-6 text-center text-muted-foreground">Carregando...</div>
+        ) : users.length === 0 ? (
+          <div className="p-6 text-center text-muted-foreground">Nenhum usuário cadastrado.</div>
+        ) : (
+          <table className="w-full text-left">
+            <thead className="bg-muted/50 text-sm">
+              <tr>
+                <th className="px-4 py-3">Usuário</th>
+                <th className="px-4 py-3">Criado</th>
+                <th className="px-4 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className="border-t border-border">
+                  <td className="px-4 py-3 font-semibold">
+                    {u.username}
+                    {actor && u.username === actor.user && (
+                      <span className="ml-2 rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand">você</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => { setEditing(u); setEditUser(u.username); setEditPass(""); }}
+                        className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
+                      >
+                        <Pencil size={14} /> Editar
+                      </button>
+                      <button
+                        onClick={() => remove(u)}
+                        disabled={!!actor && u.username === actor.user}
+                        className="flex items-center gap-1 rounded-lg border border-destructive/40 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Trash2 size={14} /> Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditing(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-lg font-bold">Editar {editing.username}</h3>
+            <label className="mb-1 block text-sm font-semibold">Usuário</label>
+            <input value={editUser} onChange={(e) => setEditUser(e.target.value)}
+              className="mb-4 w-full rounded-xl border-2 border-border bg-background px-4 py-2.5" />
+            <label className="mb-1 block text-sm font-semibold">Nova senha</label>
+            <input type="text" value={editPass} onChange={(e) => setEditPass(e.target.value)}
+              placeholder="deixe em branco para manter a atual"
+              className="mb-4 w-full rounded-xl border-2 border-border bg-background px-4 py-2.5" />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setEditing(null)}
+                className="rounded-xl border border-border px-4 py-2 font-semibold">Cancelar</button>
+              <button onClick={save}
+                className="rounded-xl bg-brand px-4 py-2 font-semibold text-brand-foreground">Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
