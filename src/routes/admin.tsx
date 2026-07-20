@@ -69,6 +69,7 @@ function AdminPage() {
             sessionStorage.removeItem(AUTH_KEY);
             sessionStorage.removeItem(ACTOR_USER_KEY);
             sessionStorage.removeItem(ACTOR_PASS_KEY);
+            window.dispatchEvent(new Event("lupo-admin-auth-changed"));
             setAuthed(false);
           }}
           className="ml-auto rounded-lg border border-white/30 px-3 py-1.5 text-sm hover:bg-white/10"
@@ -137,6 +138,7 @@ function AdminLogin({ onOk }: { onOk: () => void }) {
       sessionStorage.setItem(AUTH_KEY, "1");
       sessionStorage.setItem(ACTOR_USER_KEY, user.trim());
       sessionStorage.setItem(ACTOR_PASS_KEY, pass);
+      window.dispatchEvent(new Event("lupo-admin-auth-changed"));
       onOk();
     } else {
       setError(true);
