@@ -12,6 +12,7 @@ import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { AIAssistant } from "@/components/ai";
 
 
 function NotFoundComponent() {
@@ -101,7 +102,9 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AIAssistant>
+        <Outlet />
+      </AIAssistant>
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
