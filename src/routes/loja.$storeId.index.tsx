@@ -520,7 +520,11 @@ function BreakRow({
       <div className="flex-1 min-w-0">
         <p className={`text-xl font-semibold ${isLunch ? "text-amber-950" : "text-foreground"}`}>{rep.name}</p>
         <p className={`text-xs ${isLunch ? "text-amber-800" : "text-muted-foreground"}`}>
-          {info?.reason ?? (isLunch ? "Almoço" : "Fora")} · há {elapsedLabel}
+          {isLunch
+            ? `${info?.reason ?? "Almoço"} · há ${elapsedLabel}`
+            : info?.reason === "Fora horário de trabalho"
+              ? `Fora — ${info?.reason}`
+              : `Fora — ${info?.reason ?? "Fora"} · há ${elapsedLabel}`}
         </p>
       </div>
       <button
@@ -620,9 +624,10 @@ function InServiceDropZone({
             <div key={rep.id} className="flex flex-col gap-2">
               <button
                 onClick={() => onTapRep(rep)}
-                className="flex min-h-[140px] flex-col items-center justify-center rounded-2xl bg-brand px-4 py-6 text-brand-foreground shadow-xl active:scale-[0.98] hover:brightness-110"
+                className="flex min-h-[140px] flex-col items-center justify-center rounded-2xl bg-brand px-3 py-6 text-brand-foreground shadow-xl active:scale-[0.98] hover:brightness-110 w-full overflow-hidden"
               >
-                <span className="text-3xl md:text-4xl font-extrabold text-center">{rep.name}</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-extrabold text-center leading-tight max-w-full px-2 whitespace-normal [overflow-wrap:normal] hyphens-none">{rep.name}</span>
+
                 <span className="mt-2 text-sm opacity-90">Toque para finalizar</span>
               </button>
               <button
