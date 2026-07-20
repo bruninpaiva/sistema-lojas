@@ -138,6 +138,7 @@ function AdminLogin({ onOk }: { onOk: () => void }) {
       sessionStorage.setItem(AUTH_KEY, "1");
       sessionStorage.setItem(ACTOR_USER_KEY, user.trim());
       sessionStorage.setItem(ACTOR_PASS_KEY, pass);
+      window.dispatchEvent(new Event("lupo-admin-auth-changed"));
       onOk();
     } else {
       setError(true);
