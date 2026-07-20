@@ -54,7 +54,7 @@
       {
         "name": "attendance_summary",
         "title": "Resumo de atendimentos",
-        "description": "Retorna totais de atendimentos e conversão em um período (start_date/end_date, formato YYYY-MM-DD). Filtros opcionais por store_id e rep_id.",
+        "description": "Retorna totais de atendimentos e conversão em um período (start_date/end_date, formato YYYY-MM-DD). Filtros opcionais por store_id e sales_rep_id.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -77,7 +77,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "rep_id": {
+            "sales_rep_id": {
               "type": "string",
               "format": "uuid"
             }

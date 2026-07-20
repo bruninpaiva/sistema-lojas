@@ -9,12 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as LojaStoreIdIndexRouteImport } from './routes/loja.$storeId.index'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as LojaStoreIdVendedoraRepIdIndexRouteImport } from './routes/loja.$storeId.vendedora.$repId.index'
 import { Route as LojaStoreIdVendedoraRepIdNaoVendeuRouteImport } from './routes/loja.$storeId.vendedora.$repId.nao-vendeu'
 
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -25,11 +34,29 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LojaStoreIdIndexRoute = LojaStoreIdIndexRouteImport.update({
   id: '/loja/$storeId/',
   path: '/loja/$storeId/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LojaStoreIdVendedoraRepIdIndexRoute =
   LojaStoreIdVendedoraRepIdIndexRouteImport.update({
     id: '/loja/$storeId/vendedora/$repId/',
@@ -46,6 +73,10 @@ const LojaStoreIdVendedoraRepIdNaoVendeuRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/loja/$storeId/': typeof LojaStoreIdIndexRoute
   '/loja/$storeId/vendedora/$repId/nao-vendeu': typeof LojaStoreIdVendedoraRepIdNaoVendeuRoute
   '/loja/$storeId/vendedora/$repId/': typeof LojaStoreIdVendedoraRepIdIndexRoute
@@ -53,6 +84,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/loja/$storeId': typeof LojaStoreIdIndexRoute
   '/loja/$storeId/vendedora/$repId/nao-vendeu': typeof LojaStoreIdVendedoraRepIdNaoVendeuRoute
   '/loja/$storeId/vendedora/$repId': typeof LojaStoreIdVendedoraRepIdIndexRoute
@@ -61,6 +96,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/loja/$storeId/': typeof LojaStoreIdIndexRoute
   '/loja/$storeId/vendedora/$repId/nao-vendeu': typeof LojaStoreIdVendedoraRepIdNaoVendeuRoute
   '/loja/$storeId/vendedora/$repId/': typeof LojaStoreIdVendedoraRepIdIndexRoute
@@ -70,6 +109,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/.mcp/invoke-tool/$tool'
     | '/loja/$storeId/'
     | '/loja/$storeId/vendedora/$repId/nao-vendeu'
     | '/loja/$storeId/vendedora/$repId/'
@@ -77,6 +120,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/.mcp/invoke-tool/$tool'
     | '/loja/$storeId'
     | '/loja/$storeId/vendedora/$repId/nao-vendeu'
     | '/loja/$storeId/vendedora/$repId'
@@ -84,6 +131,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/.mcp/invoke-tool/$tool'
     | '/loja/$storeId/'
     | '/loja/$storeId/vendedora/$repId/nao-vendeu'
     | '/loja/$storeId/vendedora/$repId/'
@@ -92,6 +143,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  McpRoute: typeof McpRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   LojaStoreIdIndexRoute: typeof LojaStoreIdIndexRoute
   LojaStoreIdVendedoraRepIdNaoVendeuRoute: typeof LojaStoreIdVendedoraRepIdNaoVendeuRoute
   LojaStoreIdVendedoraRepIdIndexRoute: typeof LojaStoreIdVendedoraRepIdIndexRoute
@@ -99,6 +154,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -113,11 +175,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/loja/$storeId/': {
       id: '/loja/$storeId/'
       path: '/loja/$storeId'
       fullPath: '/loja/$storeId/'
       preLoaderRoute: typeof LojaStoreIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/loja/$storeId/vendedora/$repId/': {
@@ -140,6 +223,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  McpRoute: McpRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   LojaStoreIdIndexRoute: LojaStoreIdIndexRoute,
   LojaStoreIdVendedoraRepIdNaoVendeuRoute:
     LojaStoreIdVendedoraRepIdNaoVendeuRoute,
