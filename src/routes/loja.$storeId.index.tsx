@@ -358,14 +358,14 @@ function Queue({ store }: { store: Store }) {
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden sm:flex flex-col items-end leading-none">
-            <span className="text-[10px] uppercase tracking-wide opacity-80">Conversão hoje</span>
+          <div className="flex flex-col items-end leading-none shrink-0">
+            <span className="hidden sm:block text-[10px] uppercase tracking-wide opacity-80">Conversão hoje</span>
             <span className="text-base sm:text-lg font-extrabold inline-flex items-center gap-1">
               {storeConversion !== null ? (
                 <>
-                  <span className="text-emerald-300">{storeSales}</span>
-                  <span className="text-brand-foreground/50">/</span>
-                  <span className="text-rose-300">{storeNoSales}</span>
+                  <span className="hidden sm:inline text-emerald-300">{storeSales}</span>
+                  <span className="hidden sm:inline text-brand-foreground/50">/</span>
+                  <span className="hidden sm:inline text-rose-300">{storeNoSales}</span>
                   <span>{storeConversion}%</span>
                 </>
               ) : (
