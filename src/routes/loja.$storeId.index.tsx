@@ -37,6 +37,8 @@ export const Route = createFileRoute("/loja/$storeId/")({
 
 type Rep = { id: string; name: string; queue_position: number | null; status: string };
 type Store = { id: string; name: string };
+type AttendanceLite = { sales_rep_id: string; type: string };
+type ConvStats = { total: number; sales: number };
 
 const pinKey = (id: string) => `lupo_store_pin_ok_${id}`;
 
@@ -161,7 +163,46 @@ function PinGate({ store, onOk }: { store: Store; onOk: () => void }) {
   );
 }
 
-function DraggableRep({ rep, badge }: { rep: Rep; badge?: React.ReactNode }) {
+function ConversionBadge({
+  stats,
+  tone = "default",
+}: {
+  stats?: ConvStats;
+  tone?: "default" | "onBrand";
+}) {
+  if (!stats || stats.total === 0) {
+    return (
+      <span
+        title="Sem atendimentos hoje"
+        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+          tone === "onBrand" ? "bg-white/20 text-brand-foreground/80" : "bg-muted text-muted-foreground"
+        }`}
+      >
+        —
+      </span>
+    );
+  }
+  const noSales = stats.total - stats.sales;
+  const pct = Math.round((stats.sales / stats.total) * 100);
+  const saleColor = tone === "onBrand" ? "text-emerald-300" : "text-emerald-600";
+  const noSaleColor = tone === "onBrand" ? "text-rose-300" : "text-rose-600";
+  const sepColor = tone === "onBrand" ? "text-brand-foreground/50" : "text-muted-foreground/60";
+  return (
+    <span
+      title={`${stats.sales} venda(s) e ${noSales} não venda(s) hoje`}
+      className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
+        tone === "onBrand" ? "bg-white/25 text-brand-foreground" : "bg-brand/10 text-brand"
+      }`}
+    >
+      <span className={saleColor}>{stats.sales}</span>
+      <span className={sepColor}>/</span>
+      <span className={noSaleColor}>{noSales}</span>
+      <span>{pct}%</span>
+    </span>
+  );
+}
+
+function DraggableRep({ rep, badge, conv }: { rep: Rep; badge?: React.ReactNode; conv?: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: rep.id });
   return (
     <div
@@ -174,6 +215,7 @@ function DraggableRep({ rep, badge }: { rep: Rep; badge?: React.ReactNode }) {
       <GripVertical size={22} className="text-muted-foreground shrink-0" />
       {badge}
       <span className="flex-1 text-lg sm:text-xl font-semibold text-foreground break-words">{rep.name}</span>
+      {conv}
     </div>
   );
 }
@@ -184,6 +226,7 @@ function Queue({ store }: { store: Store }) {
   const [loading, setLoading] = useState(true);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [offPickerFor, setOffPickerFor] = useState<Rep | null>(null);
+  const [attendances, setAttendances] = useState<AttendanceLite[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -203,8 +246,22 @@ function Queue({ store }: { store: Store }) {
       });
   };
 
+  const loadAttendances = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    supabase
+      .from("attendances")
+      .select("sales_rep_id,type")
+      .eq("store_id", store.id)
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString())
+      .then(({ data }) => setAttendances((data ?? []) as AttendanceLite[]));
+  };
+
   useEffect(() => {
     load();
+    loadAttendances();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.id]);
 
@@ -212,6 +269,17 @@ function Queue({ store }: { store: Store }) {
   const available = reps.filter((r) => r.status === "available");
   const onLunch = reps.filter((r) => r.status === "lunch");
   const off = reps.filter((r) => r.status === "off");
+
+  const convByRep = new Map<string, ConvStats>();
+  for (const a of attendances) {
+    const cur = convByRep.get(a.sales_rep_id) ?? { total: 0, sales: 0 };
+    cur.total++;
+    if (a.type === "sale") cur.sales++;
+    convByRep.set(a.sales_rep_id, cur);
+  }
+  const storeSales = attendances.filter((a) => a.type === "sale").length;
+  const storeNoSales = attendances.length - storeSales;
+  const storeConversion = attendances.length > 0 ? Math.round((storeSales / attendances.length) * 100) : null;
 
   const setStatus = async (
     rep: Rep,
@@ -289,12 +357,29 @@ function Queue({ store }: { store: Store }) {
             <h1 className="text-lg font-bold truncate">{store.name}</h1>
           </div>
         </div>
-        <Link
-          to="/admin"
-          className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20 shrink-0"
-        >
-          <BarChart3 size={18} /> Admin
-        </Link>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-col items-end leading-none">
+            <span className="hidden sm:block text-[10px] uppercase tracking-wide opacity-80">Conversão hoje</span>
+            <span className="text-base sm:text-lg font-extrabold inline-flex items-center gap-1">
+              {storeConversion !== null ? (
+                <>
+                  <span className="text-emerald-300">{storeSales}</span>
+                  <span className="text-brand-foreground/50">/</span>
+                  <span className="text-rose-300">{storeNoSales}</span>
+                  <span>{storeConversion}%</span>
+                </>
+              ) : (
+                "—"
+              )}
+            </span>
+          </div>
+          <Link
+            to="/admin"
+            className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20 shrink-0"
+          >
+            <BarChart3 size={18} /> Admin
+          </Link>
+        </div>
       </header>
 
       <main className="flex-1 p-4 md:p-8">
@@ -336,6 +421,7 @@ function Queue({ store }: { store: Store }) {
                                 {idx + 1}
                               </span>
                             }
+                            conv={<ConversionBadge stats={convByRep.get(r.id)} />}
                           />
                           <div className="mt-2 grid grid-cols-2 gap-2">
                             <button
@@ -365,6 +451,7 @@ function Queue({ store }: { store: Store }) {
                 <InServiceDropZone
                   inService={inService}
                   isDragging={!!activeDragId}
+                  convByRep={convByRep}
                   onTapRep={(rep) =>
                     navigate({
                       to: "/loja/$storeId/vendedora/$repId",
@@ -389,6 +476,7 @@ function Queue({ store }: { store: Store }) {
                         key={r.id}
                         rep={r}
                         variant="lunch"
+                        conv={convByRep.get(r.id)}
                         onReturn={() =>
                           setStatus(r, "available", {
                             sendToEnd: true,
@@ -414,6 +502,7 @@ function Queue({ store }: { store: Store }) {
                         key={r.id}
                         rep={r}
                         variant="off"
+                        conv={convByRep.get(r.id)}
                         onReturn={() =>
                           setStatus(r, "available", {
                             sendToEnd: true,
@@ -462,11 +551,13 @@ function Queue({ store }: { store: Store }) {
 function BreakRow({
   rep,
   variant,
+  conv,
   onReturn,
   returnLabel,
 }: {
   rep: Rep;
   variant: "lunch" | "off";
+  conv?: ConvStats;
   onReturn: () => void;
   returnLabel: string;
 }) {
@@ -518,7 +609,10 @@ function BreakRow({
       }`}
     >
       <div className="flex-1 min-w-0">
-        <p className={`text-xl font-semibold ${isLunch ? "text-amber-950" : "text-foreground"}`}>{rep.name}</p>
+        <div className="flex items-center gap-2">
+          <p className={`text-xl font-semibold ${isLunch ? "text-amber-950" : "text-foreground"}`}>{rep.name}</p>
+          <ConversionBadge stats={conv} />
+        </div>
         <p className={`text-xs ${isLunch ? "text-amber-800" : "text-muted-foreground"}`}>
           {isLunch
             ? `${info?.reason ?? "Almoço"} · há ${elapsedLabel}`
@@ -591,11 +685,13 @@ function OffReasonModal({
 function InServiceDropZone({
   inService,
   isDragging,
+  convByRep,
   onTapRep,
   onBackToQueue,
 }: {
   inService: Rep[];
   isDragging: boolean;
+  convByRep: Map<string, ConvStats>;
   onTapRep: (rep: Rep) => void;
   onBackToQueue: (rep: Rep) => void;
 }) {
@@ -627,7 +723,9 @@ function InServiceDropZone({
                 className="flex min-h-[140px] flex-col items-center justify-center rounded-2xl bg-brand px-3 py-6 text-brand-foreground shadow-xl active:scale-[0.98] hover:brightness-110 w-full overflow-hidden"
               >
                 <span className="text-lg sm:text-xl md:text-2xl font-extrabold text-center leading-tight max-w-full px-2 whitespace-normal [overflow-wrap:normal] hyphens-none">{rep.name}</span>
-
+                <span className="mt-1">
+                  <ConversionBadge stats={convByRep.get(rep.id)} tone="onBrand" />
+                </span>
                 <span className="mt-2 text-sm opacity-90">Toque para finalizar</span>
               </button>
               <button
