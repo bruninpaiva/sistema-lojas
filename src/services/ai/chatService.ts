@@ -18,13 +18,14 @@ export const INITIAL_ASSISTANT_MESSAGE: ChatMessage = {
 };
 
 export const QUICK_SUGGESTIONS = [
-  "Quem vendeu mais hoje?",
-  "Ranking das lojas",
-  "Motivos de não venda",
-  "Conversão do mês",
-  "Funcionários sem vendas",
-  "Loja com maior faturamento",
-  "Comparar meses",
+  "Como tá hoje?",
+  "Quem vendeu mais?",
+  "Melhor loja",
+  "Conversão de hoje",
+  "Zeradas",
+  "Motivos de recusa",
+  "E o mês?",
+  "Ranking do mês",
 ] as const;
 
 export function toWireMessages(history: ChatMessage[]): AIChatMessage[] {

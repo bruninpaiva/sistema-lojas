@@ -19,6 +19,7 @@ const FIELD_KEYS = {
   LINHA: "LINHA",
   TIPO: "TIPO",
   GENERO: "GENERO",
+  FAIXA: "FAIXA ETARIA",
   MARCA: "MARCA",
   COLECAO: "COLECAO",
   STATUS: "STATUS",
@@ -38,6 +39,10 @@ const HEADER_ALIASES: Record<string, string> = {
   "TIPO": FIELD_KEYS.TIPO,
   "GENERO": FIELD_KEYS.GENERO,
   "GÊNERO": FIELD_KEYS.GENERO,
+  "FAIXA ETARIA": FIELD_KEYS.FAIXA,
+  "FAIXA ETÁRIA": FIELD_KEYS.FAIXA,
+  "FAIXA": FIELD_KEYS.FAIXA,
+  "IDADE": FIELD_KEYS.FAIXA,
   "MARCA": FIELD_KEYS.MARCA,
   "COLECAO": FIELD_KEYS.COLECAO,
   "COLEÇÃO": FIELD_KEYS.COLECAO,
@@ -124,11 +129,12 @@ type SaldoOp = ">" | "<" | "=" | ">=" | "<=";
 
 const MULTI_FIELDS: Array<{ key: string; label: string }> = [
   { key: FIELD_KEYS.LINHA, label: "Linha" },
-  { key: FIELD_KEYS.TIPO, label: "Tipo" },
+  { key: FIELD_KEYS.FAIXA, label: "Faixa etária" },
   { key: FIELD_KEYS.GENERO, label: "Gênero" },
+  { key: FIELD_KEYS.STATUS, label: "Status" },
+  { key: FIELD_KEYS.TIPO, label: "Tipo" },
   { key: FIELD_KEYS.MARCA, label: "Marca" },
   { key: FIELD_KEYS.COLECAO, label: "Coleção" },
-  { key: FIELD_KEYS.STATUS, label: "Status" },
 ];
 
 export default function PromotionsTab() {
@@ -171,6 +177,39 @@ export default function PromotionsTab() {
   };
   useEffect(() => { loadHistory(); }, []);
 
+  // Row test with option to skip one filter dimension (for cascading option lists)
+  const rowPasses = (r: Row, skip?: "years" | "saldo" | string): boolean => {
+    const dateCol = headerMap[FIELD_KEYS.DATA];
+    if (skip !== "years" && dateCol && years.size > 0) {
+      const d = parseBRDate(String(r[dateCol] ?? ""));
+      if (!d) return false;
+      if (!years.has(String(d.getFullYear()))) return false;
+    }
+    for (const f of MULTI_FIELDS) {
+      if (skip === f.key) continue;
+      const sel = multi[f.key];
+      if (!sel || sel.size === 0) continue;
+      const col = headerMap[f.key];
+      if (!col) return false;
+      const v = String(r[col] ?? "").trim();
+      if (!sel.has(v)) return false;
+    }
+    const saldoCol = headerMap[FIELD_KEYS.SALDO];
+    const saldoNum = saldoVal.trim() === "" ? null : parseNum(saldoVal);
+    if (skip !== "saldo" && saldoCol && saldoNum != null) {
+      const n = parseNum(String(r[saldoCol] ?? ""));
+      if (n == null) return false;
+      switch (saldoOp) {
+        case ">": if (!(n > saldoNum)) return false; break;
+        case "<": if (!(n < saldoNum)) return false; break;
+        case "=": if (!(n === saldoNum)) return false; break;
+        case ">=": if (!(n >= saldoNum)) return false; break;
+        case "<=": if (!(n <= saldoNum)) return false; break;
+      }
+    }
+    return true;
+  };
+
   const distinct = useMemo(() => {
     const out: Record<string, string[]> = {};
     for (const f of MULTI_FIELDS) {
@@ -178,24 +217,28 @@ export default function PromotionsTab() {
       if (!col) { out[f.key] = []; continue; }
       const set = new Set<string>();
       for (const r of rows) {
+        if (!rowPasses(r, f.key)) continue;
         const v = String(r[col] ?? "").trim();
         if (v) set.add(v);
       }
       out[f.key] = Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
     }
     return out;
-  }, [rows, headerMap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, headerMap, years, multi, saldoOp, saldoVal]);
 
   const availableYears = useMemo(() => {
     const col = headerMap[FIELD_KEYS.DATA];
     if (!col) return [];
     const set = new Set<string>();
     for (const r of rows) {
+      if (!rowPasses(r, "years")) continue;
       const d = parseBRDate(String(r[col] ?? ""));
       if (d) set.add(String(d.getFullYear()));
     }
     return Array.from(set).sort();
-  }, [rows, headerMap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, headerMap, years, multi, saldoOp, saldoVal]);
 
   const filtered = useMemo(() => {
     if (!rows.length) return [];

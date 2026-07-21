@@ -49,8 +49,6 @@ export function AIChatDrawer() {
     }
   };
 
-  const showSuggestions = messages.length <= 1 && !isThinking;
-
   return (
     <div
       role="dialog"
@@ -91,18 +89,13 @@ export function AIChatDrawer() {
             <ChatMessage key={m.id} message={m} />
           ))}
           {isThinking && <TypingIndicator />}
-          {showSuggestions && (
-            <div className="mt-2">
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Sugestões
-              </p>
-              <SuggestionChips onPick={(t) => send(t)} disabled={isThinking} />
-            </div>
-          )}
         </div>
       </div>
 
       <div className="border-t border-border bg-background p-3">
+        <div className="mb-2 overflow-x-auto">
+          <SuggestionChips onPick={(t) => send(t)} disabled={isThinking} />
+        </div>
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -110,7 +103,7 @@ export function AIChatDrawer() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
             rows={1}
-            placeholder="Pergunte algo sobre suas vendas..."
+            placeholder="Ex.: quem vendeu mais? conversão? mês?"
             className="min-h-[40px] max-h-32 flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             disabled={isThinking}
           />
@@ -125,9 +118,6 @@ export function AIChatDrawer() {
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        <p className="mt-2 text-center text-[10px] text-muted-foreground">
-          Enter envia · Shift+Enter quebra linha
-        </p>
       </div>
     </div>
   );
