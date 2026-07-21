@@ -345,21 +345,21 @@ function Queue({ store }: { store: Store }) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="flex items-center justify-between bg-brand px-4 py-4 text-brand-foreground shadow-md gap-3">
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <button onClick={exitStore} className="rounded-lg p-2 hover:bg-white/10 shrink-0" aria-label="Trocar loja">
             <ArrowLeft size={22} />
           </button>
-          <div className="flex items-center rounded-lg bg-white px-2.5 py-1 shrink-0">
+          <div className="hidden sm:flex items-center rounded-lg bg-white px-2.5 py-1 shrink-0">
             <img src={lupoLogo.url} alt="Lupo" className="h-6 w-auto" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xs opacity-80 truncate">Loja</p>
             <h1 className="text-lg font-bold truncate">{store.name}</h1>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <div className="flex flex-col items-end leading-none">
-            <span className="hidden sm:block text-[10px] uppercase tracking-wide opacity-80">Conversão hoje</span>
+          <div className="hidden sm:flex flex-col items-end leading-none">
+            <span className="text-[10px] uppercase tracking-wide opacity-80">Conversão hoje</span>
             <span className="text-base sm:text-lg font-extrabold inline-flex items-center gap-1">
               {storeConversion !== null ? (
                 <>
@@ -377,7 +377,7 @@ function Queue({ store }: { store: Store }) {
             to="/admin"
             className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20 shrink-0"
           >
-            <BarChart3 size={18} /> Admin
+            <BarChart3 size={18} /> <span className="hidden sm:inline">Admin</span>
           </Link>
         </div>
       </header>
