@@ -197,6 +197,7 @@ function ConversionBadge({
       <span className={saleColor}>{stats.sales}</span>
       <span className={sepColor}>/</span>
       <span className={noSaleColor}>{noSales}</span>
+      <span className={sepColor}>-</span>
       <span>{pct}%</span>
     </span>
   );
@@ -366,6 +367,7 @@ function Queue({ store }: { store: Store }) {
                   <span className="hidden sm:inline text-emerald-300">{storeSales}</span>
                   <span className="hidden sm:inline text-brand-foreground/50">/</span>
                   <span className="hidden sm:inline text-rose-300">{storeNoSales}</span>
+                  <span className="hidden sm:inline text-brand-foreground/50">-</span>
                   <span>{storeConversion}%</span>
                 </>
               ) : (
