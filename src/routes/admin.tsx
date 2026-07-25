@@ -17,9 +17,18 @@ import {
   Pencil,
   Tag,
   Calculator,
+  Wrench,
+  Barcode,
 } from "lucide-react";
 import PromotionsTab from "@/components/PromotionsTab";
 import CommissionTab from "@/components/CommissionTab";
+import BarcodeConverterTab from "@/components/BarcodeConverterTab";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from "recharts";
@@ -32,7 +41,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Tab = "dashboard" | "por-vendedora" | "pausas" | "lojas" | "vendedoras" | "motivos" | "usuarios" | "promocoes" | "comissao" | "exportar";
+type Tab = "dashboard" | "por-vendedora" | "pausas" | "lojas" | "vendedoras" | "motivos" | "usuarios" | "promocoes" | "comissao" | "exportar" | "conversor";
 
 const AUTH_KEY = "lupo_admin_ok";
 const ACTOR_USER_KEY = "lupo_admin_user";
@@ -87,7 +96,6 @@ function AdminPage() {
           { id: "vendedoras", label: "Vendedoras", icon: Users },
           { id: "motivos", label: "Motivos", icon: ListChecks },
           { id: "usuarios", label: "Usuários", icon: KeyRound },
-          { id: "promocoes", label: "Promoções", icon: Tag },
           { id: "comissao", label: "Comissão", icon: Calculator },
           { id: "exportar", label: "Exportar", icon: Download },
         ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map(({ id, label, icon: Icon }) => (
@@ -101,6 +109,28 @@ function AdminPage() {
             <Icon size={18} /> {label}
           </button>
         ))}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={`flex items-center gap-2 whitespace-nowrap px-5 py-4 text-sm font-semibold border-b-2 transition ${
+                tab === "promocoes" || tab === "conversor"
+                  ? "border-brand text-brand"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Wrench size={18} /> Ferramentas
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => setTab("promocoes")} className="gap-2">
+              <Tag size={16} /> Promoções
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTab("conversor")} className="gap-2">
+              <Barcode size={16} /> Conversor de código de barras
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </nav>
 
       <main className="mx-auto max-w-6xl p-4 md:p-8">
@@ -114,6 +144,7 @@ function AdminPage() {
         {tab === "promocoes" && <PromotionsTab />}
         {tab === "comissao" && <CommissionTab />}
         {tab === "exportar" && <ExportTab />}
+        {tab === "conversor" && <BarcodeConverterTab />}
       </main>
     </div>
   );
