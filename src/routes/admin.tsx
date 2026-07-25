@@ -96,8 +96,6 @@ function AdminPage() {
           { id: "vendedoras", label: "Vendedoras", icon: Users },
           { id: "motivos", label: "Motivos", icon: ListChecks },
           { id: "usuarios", label: "Usuários", icon: KeyRound },
-          { id: "comissao", label: "Comissão", icon: Calculator },
-          { id: "exportar", label: "Exportar", icon: Download },
         ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -131,6 +129,21 @@ function AdminPage() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {([
+          { id: "comissao", label: "Comissão", icon: Calculator },
+          { id: "exportar", label: "Exportar", icon: Download },
+        ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`flex items-center gap-2 whitespace-nowrap px-5 py-4 text-sm font-semibold border-b-2 transition ${
+              tab === id ? "border-brand text-brand" : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon size={18} /> {label}
+          </button>
+        ))}
       </nav>
 
       <main className="mx-auto max-w-6xl p-4 md:p-8">
