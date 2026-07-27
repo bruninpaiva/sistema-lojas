@@ -19,6 +19,7 @@ export default defineTool({
     let query = supabase
       .from("attendances")
       .select("id, store_id, sales_rep_id, type, amount, created_at")
+      .eq("status", "closed")
       .gte("created_at", `${start_date}T00:00:00.000Z`)
       .lte("created_at", `${end_date}T23:59:59.999Z`);
     if (store_id) query = query.eq("store_id", store_id);
@@ -27,7 +28,7 @@ export default defineTool({
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const rows = data ?? [];
     const total = rows.length;
-    const sold = rows.filter((r) => r.type === "venda").length;
+    const sold = rows.filter((r) => r.type === "sale").length;
     const totalAmount = rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
     const conversion = total > 0 ? sold / total : 0;
     const summary = {

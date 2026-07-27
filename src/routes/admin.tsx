@@ -277,6 +277,7 @@ function useAttendances(start: Date, end: Date, storeId: string) {
     let q = supabase
       .from("attendances")
       .select("id,created_at,sales_rep_id,store_id,type,reason_id,reason_other_text,notes")
+      .eq("status", "closed")
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
       .order("created_at", { ascending: false });

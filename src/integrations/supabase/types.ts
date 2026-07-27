@@ -55,38 +55,44 @@ export type Database = {
       attendances: {
         Row: {
           amount: number | null
+          closed_at: string | null
           created_at: string
           id: string
           notes: string | null
           reason_id: string | null
           reason_other_text: string | null
           sales_rep_id: string
+          status: string
           store_id: string | null
-          type: string
+          type: string | null
           user_id: string | null
         }
         Insert: {
           amount?: number | null
+          closed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
           reason_id?: string | null
           reason_other_text?: string | null
           sales_rep_id: string
+          status?: string
           store_id?: string | null
-          type: string
+          type?: string | null
           user_id?: string | null
         }
         Update: {
           amount?: number | null
+          closed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
           reason_id?: string | null
           reason_other_text?: string | null
           sales_rep_id?: string
+          status?: string
           store_id?: string | null
-          type?: string
+          type?: string | null
           user_id?: string | null
         }
         Relationships: [

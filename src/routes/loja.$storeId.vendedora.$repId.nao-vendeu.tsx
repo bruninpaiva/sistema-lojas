@@ -4,14 +4,20 @@ import { ArrowLeft, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+type NaoVendeuSearch = { attendanceId: string };
+
 export const Route = createFileRoute("/loja/$storeId/vendedora/$repId/nao-vendeu")({
   component: NoSalePage,
+  validateSearch: (search: Record<string, unknown>): NaoVendeuSearch => ({
+    attendanceId: String(search.attendanceId ?? ""),
+  }),
 });
 
 type Reason = { id: string; label: string; is_other: boolean; sort_order: number };
 
 function NoSalePage() {
   const { storeId, repId } = Route.useParams();
+  const { attendanceId } = Route.useSearch();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [reasons, setReasons] = useState<Reason[]>([]);
@@ -20,6 +26,10 @@ function NoSalePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!attendanceId) {
+      navigate({ to: "/loja/$storeId/vendedora/$repId", params: { storeId, repId }, replace: true });
+      return;
+    }
     supabase.from("sales_reps").select("name,store_id").eq("id", repId).maybeSingle().then(({ data }) => {
       if (!data || data.store_id !== storeId) {
         navigate({ to: "/loja/$storeId", params: { storeId }, replace: true });
@@ -33,7 +43,7 @@ function NoSalePage() {
       .eq("active", true)
       .order("sort_order")
       .then(({ data }) => setReasons(data ?? []));
-  }, [storeId, repId, navigate]);
+  }, [storeId, repId, attendanceId, navigate]);
 
   const selectedReason = reasons.find((r) => r.id === reasonId);
   const isOther = selectedReason?.is_other;
@@ -42,19 +52,32 @@ function NoSalePage() {
     if (!reasonId) return toast.error("Selecione o motivo");
     if (isOther && !otherText.trim()) return toast.error("Descreva o motivo");
     setSaving(true);
-    const { error } = await supabase.from("attendances").insert({
-      sales_rep_id: repId,
-      store_id: storeId,
-      type: "no_sale",
-      reason_id: reasonId,
-      reason_other_text: isOther ? otherText.trim() : null,
-    });
+    const { error } = await supabase
+      .from("attendances")
+      .update({
+        type: "no_sale",
+        status: "closed",
+        closed_at: new Date().toISOString(),
+        reason_id: reasonId,
+        reason_other_text: isOther ? otherText.trim() : null,
+      })
+      .eq("id", attendanceId);
     setSaving(false);
     if (error) return toast.error("Erro ao registrar. Tente novamente.");
-    await supabase.from("sales_reps").update({ status: "available" }).eq("id", repId);
-    await supabase.rpc("send_to_end_of_queue", { _rep_id: repId });
+
+    const { data: stillOpen } = await supabase
+      .from("attendances")
+      .select("id")
+      .eq("sales_rep_id", repId)
+      .eq("status", "open");
     toast.success("Registrado!");
-    navigate({ to: "/loja/$storeId", params: { storeId }, replace: true });
+    if (!stillOpen || stillOpen.length === 0) {
+      await supabase.from("sales_reps").update({ status: "available" }).eq("id", repId);
+      await supabase.rpc("send_to_end_of_queue", { _rep_id: repId });
+      navigate({ to: "/loja/$storeId", params: { storeId }, replace: true });
+    } else {
+      navigate({ to: "/loja/$storeId/vendedora/$repId", params: { storeId, repId }, replace: true });
+    }
   };
 
   return (

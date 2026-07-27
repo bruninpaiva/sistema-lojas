@@ -39,6 +39,7 @@ type Rep = { id: string; name: string; queue_position: number | null; status: st
 type Store = { id: string; name: string };
 type AttendanceLite = { sales_rep_id: string; type: string };
 type ConvStats = { total: number; sales: number };
+type OpenLite = { sales_rep_id: string };
 
 const pinKey = (id: string) => `lupo_store_pin_ok_${id}`;
 
@@ -228,6 +229,7 @@ function Queue({ store }: { store: Store }) {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [offPickerFor, setOffPickerFor] = useState<Rep | null>(null);
   const [attendances, setAttendances] = useState<AttendanceLite[]>([]);
+  const [openAttendances, setOpenAttendances] = useState<OpenLite[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -255,14 +257,25 @@ function Queue({ store }: { store: Store }) {
       .from("attendances")
       .select("sales_rep_id,type")
       .eq("store_id", store.id)
+      .eq("status", "closed")
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
       .then(({ data }) => setAttendances((data ?? []) as AttendanceLite[]));
   };
 
+  const loadOpenAttendances = () => {
+    supabase
+      .from("attendances")
+      .select("sales_rep_id")
+      .eq("store_id", store.id)
+      .eq("status", "open")
+      .then(({ data }) => setOpenAttendances((data ?? []) as OpenLite[]));
+  };
+
   useEffect(() => {
     load();
     loadAttendances();
+    loadOpenAttendances();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.id]);
 
@@ -270,6 +283,11 @@ function Queue({ store }: { store: Store }) {
   const available = reps.filter((r) => r.status === "available");
   const onLunch = reps.filter((r) => r.status === "lunch");
   const off = reps.filter((r) => r.status === "off");
+
+  const openCountByRep = new Map<string, number>();
+  for (const a of openAttendances) {
+    openCountByRep.set(a.sales_rep_id, (openCountByRep.get(a.sales_rep_id) ?? 0) + 1);
+  }
 
   const convByRep = new Map<string, ConvStats>();
   for (const a of attendances) {
@@ -454,15 +472,19 @@ function Queue({ store }: { store: Store }) {
                   inService={inService}
                   isDragging={!!activeDragId}
                   convByRep={convByRep}
+                  openCountByRep={openCountByRep}
                   onTapRep={(rep) =>
                     navigate({
                       to: "/loja/$storeId/vendedora/$repId",
                       params: { storeId: store.id, repId: rep.id },
                     })
                   }
-                  onBackToQueue={(rep) =>
-                    setStatus(rep, "available", { message: `${rep.name} voltou para a fila` })
-                  }
+                  onBackToQueue={(rep) => {
+                    if ((openCountByRep.get(rep.id) ?? 0) > 0) {
+                      return toast.error(`${rep.name} ainda tem atendimento(s) em aberto`);
+                    }
+                    setStatus(rep, "available", { message: `${rep.name} voltou para a fila` });
+                  }}
                 />
               </div>
 
@@ -688,12 +710,14 @@ function InServiceDropZone({
   inService,
   isDragging,
   convByRep,
+  openCountByRep,
   onTapRep,
   onBackToQueue,
 }: {
   inService: Rep[];
   isDragging: boolean;
   convByRep: Map<string, ConvStats>;
+  openCountByRep: Map<string, number>;
   onTapRep: (rep: Rep) => void;
   onBackToQueue: (rep: Rep) => void;
 }) {
@@ -718,15 +742,22 @@ function InServiceDropZone({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {inService.map((rep) => (
+          {inService.map((rep) => {
+            const openCount = openCountByRep.get(rep.id) ?? 0;
+            return (
             <div key={rep.id} className="flex flex-col gap-2">
               <button
                 onClick={() => onTapRep(rep)}
                 className="flex min-h-[140px] flex-col items-center justify-center rounded-2xl bg-brand px-3 py-6 text-brand-foreground shadow-xl active:scale-[0.98] hover:brightness-110 w-full overflow-hidden"
               >
                 <span className="text-lg sm:text-xl md:text-2xl font-extrabold text-center leading-tight max-w-full px-2 whitespace-normal [overflow-wrap:normal] hyphens-none">{rep.name}</span>
-                <span className="mt-1">
+                <span className="mt-1 flex items-center gap-1.5">
                   <ConversionBadge stats={convByRep.get(rep.id)} tone="onBrand" />
+                  {openCount > 1 && (
+                    <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs font-bold">
+                      {openCount} atendimentos abertos
+                    </span>
+                  )}
                 </span>
                 <span className="mt-2 text-sm opacity-90">Toque para finalizar</span>
               </button>
@@ -737,7 +768,8 @@ function InServiceDropZone({
                 Voltar para a fila
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

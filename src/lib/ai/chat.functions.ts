@@ -162,6 +162,7 @@ async function loadAttendanceSummary(
   const { data: rows, error } = await supabaseAdmin
     .from("attendances")
     .select("id,type,store_id,sales_rep_id,created_at")
+    .eq("status", "closed")
     .gte("created_at", range.from)
     .lt("created_at", range.to);
   if (error) return null;
@@ -363,6 +364,7 @@ export const aiChat = createServerFn({ method: "POST" })
           const { data: rows, error } = await supabaseAdmin
             .from("attendances")
             .select("id,type,amount,store_id,sales_rep_id,created_at")
+            .eq("status", "closed")
             .gte("created_at", from)
             .lt("created_at", to);
           if (error) return { error: error.message };
@@ -534,7 +536,7 @@ export const aiChat = createServerFn({ method: "POST" })
           const rep = (reps ?? [])[0];
           if (!rep) return { error: `Vendedora não encontrada: ${args.rep_name}` };
           const { data: storeRow } = rep.store_id ? await supabaseAdmin.from("stores").select("name").eq("id", rep.store_id).maybeSingle() : { data: null as any };
-          const { data: atts } = await supabaseAdmin.from("attendances").select("id,type,reason_id,reason_other_text,created_at").eq("sales_rep_id", rep.id).gte("created_at", from).lt("created_at", to);
+          const { data: atts } = await supabaseAdmin.from("attendances").select("id,type,reason_id,reason_other_text,created_at").eq("sales_rep_id", rep.id).eq("status", "closed").gte("created_at", from).lt("created_at", to);
           const { data: reasons } = await supabaseAdmin.from("no_sale_reasons").select("id,label,is_other");
           const rmap = new Map((reasons ?? []).map((r: any) => [r.id, r]));
           const total = atts?.length ?? 0;
